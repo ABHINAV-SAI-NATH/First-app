@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Milk Ledger</title>
-<meta name="description" content="Dairy milk collection & local sale register — works fully offline">
+<meta name="description" content="Dairy milk collection & local sale register — delovpoed by Abhinav sai nath fir family use only">
 <meta name="theme-color" content="#2F4A3C">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -197,7 +197,7 @@ td{padding:10px 12px;font-size:14px;vertical-align:middle;}
       </div>
     </div>
     <div class="hdr-rates">
-      <div class="hdr-rate">
+      <div class="hdr-rate">and 
         <div class="hdr-rate-label">Buy Rate</div>
         <div class="hdr-rate-val" id="hdr-buy">₹0.00</div>
       </div>
@@ -218,7 +218,7 @@ td{padding:10px 12px;font-size:14px;vertical-align:middle;}
   <div class="dnav">
     <button id="prev-day">‹</button>
     <button id="today-btn" style="display:none;">Today</button>
-    <button id="cal-btn" title="Pick a date">📅</button>
+    <button id="cal-btn" title="Pick a date"></button>
     <button id="next-day">›</button>
   </div>
 </div>
@@ -605,8 +605,8 @@ function buildEntry(){
   return `
     <div class="sec-title" style="font-size:16px;">🐄 Milk Collection</div>
     <div class="shift-row">
-      <button class="shbtn${shift==='AM'?' on':''}" data-shift="AM">☀️ Morning</button>
-      <button class="shbtn${shift==='PM'?' on':''}" data-shift="PM">🌙 Evening</button>
+      <button class="shbtn${shift==='AM'?' on':''}" data-shift="AM"> Morning</button>
+      <button class="shbtn${shift==='PM'?' on':''}" data-shift="PM"> Evening</button>
     </div>
     <div class="sgrid s4" style="margin-bottom:12px;">
       <div class="scard"><div class="scard-label">Reported</div><div class="scard-val">${reported}/${S.farmers.length}</div></div>
