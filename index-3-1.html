@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Milk Ledger</title>
+<meta name="description" content="Dairy milk collection & local sale register — works fully offline">
+<meta name="theme-color" content="#2F4A3C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Milk Ledger">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* ===== RESET & ROOT ===== */
+:root{
+  --cream:#FAF6ED; --cream2:#F1EAD9; --ink:#2B2620; --soft:#6B6255;
+  --forest:#2F4A3C; --forest2:#1A3328; --clay:#A9673D; --gold:#A9791E;
+  --line:#E3DAC5; --red:#B3432D; --green:#2E7D52; --white:#FFFFFF;
+  --blue:#1A5C8A; --purple:#6B3FA0;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;background:var(--cream);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;}
+button{cursor:pointer;font-family:inherit;}
+input,select,textarea{font-family:inherit;}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--forest);outline-offset:2px;}
+::placeholder{color:#B4AA98;}
+table{border-collapse:collapse;width:100%;}
+th{background:var(--cream2);color:var(--soft);font-size:12px;font-weight:600;padding:10px 12px;text-align:left;}
+td{padding:10px 12px;font-size:14px;vertical-align:middle;}
+.rowline{border-bottom:1px solid var(--line);}
+.wrap{max-width:960px;margin:0 auto;padding:0 14px;}
+
+/* ===== HEADER ===== */
+.hdr{background:var(--forest);color:var(--cream);padding:13px 0;}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.badge{width:38px;height:38px;border-radius:9px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.hdr-title{font-size:19px;font-weight:700;font-family:Georgia,serif;line-height:1.1;}
+.hdr-sub{font-size:10px;color:#9DBDB2;margin-top:1px;}
+.hdr-rates{display:flex;gap:14px;text-align:right;}
+.hdr-rate{text-align:right;}
+.hdr-rate-label{font-size:9px;color:#9DBDB2;letter-spacing:.3px;text-transform:uppercase;}
+.hdr-rate-val{font-size:15px;font-weight:700;font-family:monospace;}
+
+/* ===== DATE BAR ===== */
+.datebar{background:var(--forest2);color:var(--cream);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.datebar-date{font-size:13px;font-weight:600;}
+.datebar-time{font-size:11px;color:#7AADA0;font-family:monospace;}
+.dnav{display:flex;gap:4px;align-items:center;}
+.dnav button{background:rgba(255,255,255,.12);border:none;color:#fff;height:28px;border-radius:6px;font-size:13px;padding:0 8px;display:flex;align-items:center;}
+.dnav button:active{background:rgba(255,255,255,.25);}
+
+/* ===== TABS ===== */
+.tabbar{background:var(--cream2);border-bottom:2px solid var(--line);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tab{flex:1;min-width:64px;padding:9px 4px 8px;border:none;background:none;border-bottom:3px solid transparent;color:var(--soft);font-size:11px;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;}
+.tab .ico{font-size:18px;}
+.tab.active{border-bottom-color:var(--clay);color:var(--forest);font-weight:700;}
+
+/* ===== CONTENT ===== */
+.content{padding:14px 0 100px;}
+
+/* ===== CARDS ===== */
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;}
+.pad{padding:14px 16px;}
+.sec-title{font-family:Georgia,serif;font-size:15px;font-weight:700;color:var(--forest);margin-bottom:11px;}
+
+/* ===== SUMMARY GRID ===== */
+.sgrid{display:grid;gap:8px;margin-bottom:14px;}
+.s2{grid-template-columns:1fr 1fr;}
+.s3{grid-template-columns:1fr 1fr 1fr;}
+.s4{grid-template-columns:repeat(4,1fr);}
+.s5{grid-template-columns:repeat(5,1fr);}
+@media(max-width:480px){.s4,.s5{grid-template-columns:1fr 1fr;}.s3{grid-template-columns:1fr 1fr;}}
+.scard{background:var(--white);border:1px solid var(--line);border-radius:9px;padding:10px 12px;}
+.scard-label{font-size:10px;color:var(--soft);margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px;}
+.scard-val{font-size:17px;font-weight:700;color:var(--forest);}
+.scard-val.gold{color:var(--gold);}
+.scard-val.red{color:var(--red);}
+.scard-val.blue{color:var(--blue);}
+.scard-val.purple{color:var(--purple);}
+.scard-val.green{color:var(--green);}
+
+/* ===== SHIFT TOGGLE ===== */
+.shift-row{display:flex;gap:8px;margin-bottom:12px;}
+.shbtn{flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--line);background:var(--white);color:var(--soft);font-weight:600;font-size:14px;}
+.shbtn.on{background:var(--forest);color:#fff;border-color:var(--forest);}
+
+/* ===== FORM FIELDS ===== */
+.field label{display:block;font-size:11px;color:var(--soft);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;}
+.inp{width:100%;padding:9px 11px;border-radius:7px;border:1.5px solid var(--line);background:#fff;font-size:14px;color:var(--ink);}
+.inp:focus{border-color:var(--forest);}
+.inp-money{font-family:monospace;font-size:15px;font-weight:700;}
+
+/* ===== BUTTONS ===== */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:7px;border:none;font-size:13px;font-weight:600;}
+.btn-primary{background:var(--clay);color:#fff;}
+.btn-primary:active{background:#8F572F;}
+.btn-ghost{background:var(--cream2);color:var(--forest);border:1px solid var(--line);}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-red{background:#fff;color:var(--red);border:1.5px solid var(--red);}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:6px;}
+.btn-xs{padding:4px 8px;font-size:11px;border-radius:5px;}
+
+/* ===== ENTRY TABLE ===== */
+.entry-table-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+.entry-row{display:grid;grid-template-columns:76px 1fr auto;align-items:center;border-bottom:1px solid var(--line);background:var(--white);}
+.entry-row:last-child{border-bottom:none;}
+.entry-row.saved{background:#F6FBF8;}
+.er-ud-col{padding:10px 10px;border-right:1px solid var(--line);}
+.er-ud{font-size:11px;color:var(--soft);font-family:monospace;font-weight:600;}
+.er-name{font-size:13px;font-weight:700;color:var(--ink);}
+.er-other{font-size:11px;color:var(--soft);margin-top:2px;}
+.er-info{padding:9px 10px;}
+.er-ctrl{padding:7px 8px;display:flex;align-items:center;gap:5px;justify-content:flex-end;flex-wrap:nowrap;}
+
+/* LOCKED STATE */
+.locked-val{font-size:15px;font-weight:700;color:var(--green);font-family:monospace;white-space:nowrap;}
+.tick{font-size:15px;color:var(--green);}
+.edit-btn{background:none;border:1px solid var(--line);border-radius:6px;color:var(--soft);font-size:11px;padding:4px 8px;}
+.absent-pill{background:#FDECEA;color:var(--red);font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;white-space:nowrap;}
+
+/* INPUT STATE */
+.liter-inp{width:72px;padding:7px 6px;border-radius:6px;border:2px solid var(--clay);background:#FFF8F4;font-size:14px;font-weight:700;color:var(--ink);font-family:monospace;text-align:right;}
+.liter-inp:focus{outline:none;box-shadow:0 0 0 3px rgba(169,103,61,.18);}
+.enter-btn{background:var(--clay);color:#fff;border:none;border-radius:6px;width:36px;height:36px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.enter-btn:active{background:#8F572F;}
+.abs-btn{background:none;border:1px solid var(--line);border-radius:6px;color:var(--soft);font-size:11px;padding:5px 7px;white-space:nowrap;flex-shrink:0;}
+
+/* ===== LOCAL SALE ===== */
+.sale-price-bar{background:var(--blue);color:#fff;padding:10px 14px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.sale-price-bar-label{font-size:12px;opacity:.85;}
+.sale-price-bar-val{font-size:22px;font-weight:700;font-family:monospace;}
+.sale-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:0;border-bottom:1px solid var(--line);background:var(--white);padding:10px 12px;}
+.sale-row:last-child{border-bottom:none;}
+.sale-name{font-size:14px;font-weight:600;}
+.sale-phone{font-size:11px;color:var(--soft);}
+.sale-amt{font-size:15px;font-weight:700;color:var(--blue);font-family:monospace;text-align:right;}
+.sale-liters{font-size:12px;color:var(--soft);font-family:monospace;text-align:right;}
+
+/* ===== SEARCH ===== */
+.search-wrap{position:relative;}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--soft);pointer-events:none;}
+.search-wrap .inp{padding-left:30px;}
+
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(20,16,10,.6);display:flex;align-items:flex-end;justify-content:center;z-index:500;}
+@media(min-width:520px){.modal-bg{align-items:center;padding:20px;}}
+.modal{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:18px 16px;}
+@media(min-width:520px){.modal{border-radius:14px;}}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.modal-title{font-family:Georgia,serif;font-size:17px;font-weight:700;color:var(--forest);}
+.modal-close{background:var(--cream2);border:none;width:30px;height:30px;border-radius:50%;font-size:16px;color:var(--soft);}
+
+/* ===== CHIPS ===== */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.chip{padding:6px 13px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#fff;color:var(--soft);}
+.chip.on{background:var(--forest);color:#fff;border-color:var(--forest);}
+
+/* ===== PAYOUT CARDS ===== */
+.payout-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-bottom:18px;}
+.payout-card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;cursor:pointer;}
+.payout-card:active{box-shadow:0 2px 10px rgba(0,0,0,.1);}
+.payout-card.top{border-color:var(--gold);background:#FDFAF2;}
+.payout-card.sale-card{border-color:#BDD5E8;background:#F2F7FB;}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--forest);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 18px rgba(0,0,0,.25);z-index:600;white-space:nowrap;pointer-events:none;}
+.toast.err{background:var(--red);}
+
+/* ===== MISC ===== */
+.empty{text-align:center;padding:32px 16px;color:var(--soft);font-size:14px;border:1.5px dashed var(--line);border-radius:10px;background:var(--white);}
+.offline-bar{display:none;background:#7B4E2D;color:#fff;text-align:center;padding:6px;font-size:12px;}
+.install-bar{display:none;background:var(--forest2);color:#fff;text-align:center;padding:8px;font-size:12px;cursor:pointer;}
+.divider{height:1px;background:var(--line);margin:14px 0;}
+.tag-green{background:#E6F4ED;color:var(--green);font-size:11px;font-weight:600;padding:3px 7px;border-radius:5px;}
+.tag-blue{background:#E3EEF6;color:var(--blue);font-size:11px;font-weight:600;padding:3px 7px;border-radius:5px;}
+.tag-red{background:#FDECEA;color:var(--red);font-size:11px;font-weight:600;padding:3px 7px;border-radius:5px;}
+@media print{.hdr,.tabbar,.datebar,.no-print{display:none!important;}body{background:#fff;}}
+</style>
+</head>
+<body>
+
+<div class="offline-bar" id="offline-bar">Offline — all data available locally</div>
+<div class="install-bar" id="install-bar">Tap to install Milk Ledger on your home screen</div>
+<div id="sync-bar" style="display:none;text-align:center;padding:5px;font-size:11px;font-weight:600;"></div>
+
+<div class="hdr">
+  <div class="wrap hdr-inner">
+    <div class="logo">
+      <div class="badge"></div>
+      <div>
+        <div class="hdr-title">Milk Ledger</div>
+        <div class="hdr-sub">Collection &amp; Sale Register</div>
+      </div>
+    </div>
+    <div class="hdr-rates">
+      <div class="hdr-rate">
+        <div class="hdr-rate-label">Buy Rate</div>
+        <div class="hdr-rate-val" id="hdr-buy">₹0.00</div>
+      </div>
+      <div class="hdr-rate">
+        <div class="hdr-rate-label">Sale Rate</div>
+        <div class="hdr-rate-val" id="hdr-sell" style="color:#FFD580;">₹0.00</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="datebar wrap">
+  <div style="position:relative;">
+    <div class="datebar-date" id="db-date" style="cursor:pointer;">—</div>
+    <div class="datebar-time" id="db-time">—</div>
+    <input type="date" id="date-jump" style="position:absolute;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;">
+  </div>
+  <div class="dnav">
+    <button id="prev-day">‹</button>
+    <button id="today-btn" style="display:none;">Today</button>
+    <button id="cal-btn" title="Pick a date">Date</button>
+    <button id="next-day">›</button>
+  </div>
+</div>
+
+<div class="tabbar" id="tabbar"></div>
+<div class="wrap content" id="main"></div>
+<div style="text-align:center;font-size:11px;color:var(--soft);padding:6px 0 14px;">Devloped by Abhinav Sainath only for family use</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script>
+/* ======================================================
+   INDEXEDDB
+   ====================================================== */
+let DB=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('milkledger',4);
+    r.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('farmers'))   d.createObjectStore('farmers',{keyPath:'udNumber'});
+      if(!d.objectStoreNames.contains('entries')){
+        const es=d.createObjectStore('entries',{keyPath:'id'});
+        es.createIndex('date','date',{unique:false});
+      }
+      if(!d.objectStoreNames.contains('customers')) d.createObjectStore('customers',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('sales')){
+        const ss=d.createObjectStore('sales',{keyPath:'id'});
+        ss.createIndex('date','date',{unique:false});
+      }
+      if(!d.objectStoreNames.contains('saleDays'))  d.createObjectStore('saleDays',{keyPath:'date'});
+      if(!d.objectStoreNames.contains('settings'))  d.createObjectStore('settings',{keyPath:'k'});
+    };
+    r.onsuccess=e=>{DB=e.target.result;res();};
+    r.onerror=e=>rej(e.target.error);
+  });
+}
+const store=(n,m)=>DB.transaction(n,m).objectStore(n);
+const dbAll=n=>new Promise((res,rej)=>{const r=store(n,'readonly').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=e=>rej(e.target.error);});
+const dbPut=(n,v)=>new Promise((res,rej)=>{const r=store(n,'readwrite').put(v);r.onsuccess=()=>res();r.onerror=e=>rej(e.target.error);});
+const dbDel=(n,k)=>new Promise((res,rej)=>{const r=store(n,'readwrite').delete(k);r.onsuccess=()=>res();r.onerror=e=>rej(e.target.error);});
+const dbClear=n=>new Promise((res,rej)=>{const r=store(n,'readwrite').clear();r.onsuccess=()=>res();r.onerror=e=>rej(e.target.error);});
+
+/* ======================================================
+   STATE
+   ====================================================== */
+const S={
+  farmers:[],entries:[],customers:[],sales:[],saleDays:[],
+  buyPrice:0,sellPrice:0,
+  tab:'entry',
+  date:todayStr(),shift:autoShift(),
+  search:'',
+  fSearch:'',fEdit:null,
+  cSearch:'',cEdit:null,
+  rPreset:'today',rStart:todayStr(),rEnd:todayStr(),rRate:null,rRateInput:'',
+  sPreset:'today',sStart:todayStr(),sEnd:todayStr(),
+  editing:new Set(),
+  pendingFocusUd:null,
+  // local sale entry for today
+  saleDate:todayStr(),
+  saleLiterInput:'',saleNoteInput:'',
+};
+
+/* ======================================================
+   HELPERS
+   ====================================================== */
+function localDateStr(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function todayStr(){return localDateStr(new Date());}
+function autoShift(){return new Date().getHours()<14?'AM':'PM';}
+function uid(){return crypto&&crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();}
+function esc(s){const d=document.createElement('div');d.innerText=s==null?'':String(s);return d.innerHTML;}
+function fmtMoney(n){return '₹'+(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtL(n){return (n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})+' L';}
+function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});}
+function fmtDateShort(s){return new Date(s+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function farmerOf(ud){return S.farmers.find(f=>f.udNumber===ud);}
+function customerOf(id){return S.customers.find(c=>c.id===id);}
+function saleDayOf(date){return S.saleDays.find(d=>d.date===date);}
+function monthBounds(ds){
+  const d=new Date(ds+'T00:00:00'),y=d.getFullYear(),m=d.getMonth();
+  const mm=String(m+1).padStart(2,'0');
+  return{first:`${y}-${mm}-01`,last:`${y}-${mm}-${String(new Date(y,m+1,0).getDate()).padStart(2,'0')}`};
+}
+function eKey(ud,shift){return `${ud}|${shift}`;}
+function findEntry(ud,date,shift){return S.entries.find(e=>e.udNumber===ud&&e.date===date&&e.shift===shift);}
+
+let _tt=null;
+function toast(msg,err){
+  const r=document.getElementById('toast-root');
+  r.innerHTML=`<div class="toast${err?' err':''}">${esc(msg)}</div>`;
+  clearTimeout(_tt);_tt=setTimeout(()=>r.innerHTML='',2400);
+}
+
+// Custom confirm dialog. Some mobile browsers / in-app webviews (e.g. app-embedded
+// browsers, some installed-PWA contexts) silently block or auto-dismiss the native
+// window.confirm(), which makes buttons that rely on it look "broken". This renders
+// our own modal instead and always works the same way everywhere.
+function appConfirm(message,opts){
+  opts=opts||{};
+  return new Promise(resolve=>{
+    const root=document.getElementById('modal-root');
+    root.innerHTML=`<div class="modal-bg" id="mbg">
+      <div class="modal" style="max-width:360px;">
+        <div class="modal-hdr"><div class="modal-title">${esc(opts.title||'Please Confirm')}</div><button class="modal-close" id="ac-x">✕</button></div>
+        <div style="font-size:14px;color:var(--ink);white-space:pre-line;line-height:1.5;margin-bottom:16px;">${esc(message)}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn ${opts.danger?'btn-red':'btn-primary'}" id="ac-yes">${esc(opts.yesLabel||(opts.danger?'Yes, Continue':'Confirm'))}</button>
+          <button class="btn btn-ghost" id="ac-no">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+    const close=v=>{root.innerHTML='';resolve(v);};
+    document.getElementById('ac-x').onclick=()=>close(false);
+    document.getElementById('mbg').onclick=e=>{if(e.target.id==='mbg')close(false);};
+    document.getElementById('ac-yes').onclick=()=>close(true);
+    document.getElementById('ac-no').onclick=()=>close(false);
+  });
+}
+
+/* ======================================================
+   DB ACTIONS
+   ====================================================== */
+async function saveFarmer(f){await dbPut('farmers',f);const i=S.farmers.findIndex(x=>x.udNumber===f.udNumber);if(i>=0)S.farmers[i]=f;else S.farmers.push(f);syncPush('farmers',f.udNumber,f);}
+async function delFarmer(ud){await dbDel('farmers',ud);S.farmers=S.farmers.filter(f=>f.udNumber!==ud);syncPush('farmers',ud,null);}
+async function saveEntry(e){await dbPut('entries',e);const i=S.entries.findIndex(x=>x.id===e.id);if(i>=0)S.entries[i]=e;else S.entries.push(e);syncPush('entries',e.id,e);}
+async function delEntry(id){await dbDel('entries',id);S.entries=S.entries.filter(e=>e.id!==id);syncPush('entries',id,null);}
+async function saveCustomer(c){await dbPut('customers',c);const i=S.customers.findIndex(x=>x.id===c.id);if(i>=0)S.customers[i]=c;else S.customers.push(c);syncPush();}
+async function delCustomer(id){await dbDel('customers',id);S.customers=S.customers.filter(c=>c.id!==id);syncPush();}
+async function saveSale(s){await dbPut('sales',s);const i=S.sales.findIndex(x=>x.id===s.id);if(i>=0)S.sales[i]=s;else S.sales.push(s);syncPush('sales',s.id,s);}
+async function delSale(id){await dbDel('sales',id);S.sales=S.sales.filter(s=>s.id!==id);syncPush('sales',id,null);}
+async function saveSaleDay(d){await dbPut('saleDays',d);const i=S.saleDays.findIndex(x=>x.date===d.date);if(i>=0)S.saleDays[i]=d;else S.saleDays.push(d);syncPush('saleDays',d.date,d);}
+async function delSaleDay(date){await dbDel('saleDays',date);S.saleDays=S.saleDays.filter(d=>d.date!==date);syncPush('saleDays',date,null);}
+async function saveSettings(silent){await dbPut('settings',{k:'main',buyPrice:S.buyPrice,sellPrice:S.sellPrice});if(!silent)syncPush();}
+async function clearAll(){
+  await Promise.all(['farmers','entries','customers','sales','saleDays'].map(dbClear));
+  S.farmers=[];S.entries=[];S.customers=[];S.sales=[];S.saleDays=[];
+}
+
+/* ======================================================
+   MULTI-DEVICE SYNC (via jsonblob.com — a free, keyless JSON store)
+   No account, console, or deploy step: the app itself creates a private
+   "sync space" with one API call and gives you a Sync Code to enter on
+   your other phone. Whole app state is stored as one JSON blob, pulled
+   on a timer. Last-write-wins by timestamp. Note: jsonblob removes a
+   blob only after 75 days with zero access to it — normal use of the
+   app on either connected phone resets that clock every time.
+   ====================================================== */
+const JSONBLOB_BASE='https://jsonblob.com/api/jsonBlob';
+const SYNC={enabled:false,bucketId:'',connected:false,status:'off',lastSync:null,errorMsg:'',pushTimer:null,pollTimer:null,lastAppliedAt:0,busy:false};
+
+function collectState(){
+  return{farmers:S.farmers,entries:S.entries,customers:S.customers,sales:S.sales,saleDays:S.saleDays,buyPrice:S.buyPrice,sellPrice:S.sellPrice};
+}
+
+// Creates a brand-new, private sync space seeded with current local data.
+// Returns {id, ts} — id is the "Sync Code" shown to the user.
+async function createSyncSpace(){
+  const ts=Date.now();
+  const res=await fetch(JSONBLOB_BASE,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({ts,data:collectState()})});
+  if(!res.ok)throw new Error('Could not create sync space (HTTP '+res.status+')');
+  const loc=res.headers.get('Location')||res.headers.get('location');
+  if(!loc)throw new Error('Sync space was created but no ID came back — try again, or use Chrome if on a different browser');
+  const id=loc.split('/').filter(Boolean).pop();
+  if(!id)throw new Error('Could not read the sync ID from the response');
+  return{id,ts};
+}
+
+// Called after any local change. Debounced so rapid edits collapse into one push.
+function syncPush(){
+  if(!SYNC.enabled)return;
+  clearTimeout(SYNC.pushTimer);
+  SYNC.pushTimer=setTimeout(pushState,1200);
+}
+
+async function pushState(){
+  if(!SYNC.enabled||!SYNC.bucketId)return;
+  SYNC.busy=true;
+  try{
+    const ts=Date.now();
+    const res=await fetch(`${JSONBLOB_BASE}/${SYNC.bucketId}`,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({ts,data:collectState()})});
+    if(!res.ok)throw new Error('Sync push failed (HTTP '+res.status+')');
+    SYNC.lastAppliedAt=ts;
+    SYNC.connected=true;SYNC.status='synced';SYNC.lastSync=new Date();SYNC.errorMsg='';
+  }catch(err){
+    SYNC.status='error';SYNC.errorMsg=String((err&&err.message)||err||'unknown error');
+  }
+  SYNC.busy=false;renderAll();
+}
+
+async function pullState(){
+  if(!SYNC.enabled||!SYNC.bucketId||SYNC.busy)return;
+  try{
+    const res=await fetch(`${JSONBLOB_BASE}/${SYNC.bucketId}`,{headers:{'Accept':'application/json'}});
+    if(res.status===404){
+      SYNC.connected=false;SYNC.status='error';SYNC.errorMsg='No sync space found for that code — double-check it was typed/pasted correctly.';renderAll();return;
+    }
+    if(!res.ok)throw new Error('Sync pull failed (HTTP '+res.status+')');
+    const payload=await res.json();
+    if(payload&&typeof payload.ts==='number'&&payload.ts>SYNC.lastAppliedAt){
+      const state=payload.data||{};
+      S.farmers=state.farmers||[];S.entries=state.entries||[];S.customers=state.customers||[];
+      S.sales=state.sales||[];S.saleDays=state.saleDays||[];
+      if(typeof state.buyPrice==='number')S.buyPrice=state.buyPrice;
+      if(typeof state.sellPrice==='number')S.sellPrice=state.sellPrice;
+      SYNC.lastAppliedAt=payload.ts;
+      await Promise.all(['farmers','entries','customers','sales','saleDays'].map(dbClear));
+      for(const f of S.farmers)await dbPut('farmers',f);
+      for(const e of S.entries)await dbPut('entries',e);
+      for(const c of S.customers)await dbPut('customers',c);
+      for(const s of S.sales)await dbPut('sales',s);
+      for(const d of S.saleDays)await dbPut('saleDays',d);
+      await saveSettings(true);
+      renderAll();
+    }
+    SYNC.connected=true;SYNC.status='synced';SYNC.lastSync=new Date();SYNC.errorMsg='';renderAll();
+  }catch(err){
+    SYNC.connected=false;SYNC.status='error';SYNC.errorMsg=String((err&&err.message)||err||'unknown error');renderAll();
+  }
+}
+
+// isNew=true: this device just created the sync space (already seeded via createSyncSpace).
+// isNew=false: joining an existing space, so pull whatever's already there.
+async function connectSync(bucketId,isNew,seedTs){
+  SYNC.enabled=true;SYNC.bucketId=bucketId;SYNC.status='connecting';SYNC.lastAppliedAt=isNew?(seedTs||0):0;
+  await dbPut('settings',{k:'sync',bucketId});
+  clearInterval(SYNC.pollTimer);
+  if(isNew){SYNC.connected=true;SYNC.status='synced';SYNC.lastSync=new Date();SYNC.errorMsg='';}
+  else await pullState();
+  SYNC.pollTimer=setInterval(pullState,10000);
+  return SYNC.status!=='error';
+}
+
+function disconnectSync(){
+  clearInterval(SYNC.pollTimer);clearTimeout(SYNC.pushTimer);
+  SYNC.enabled=false;SYNC.connected=false;SYNC.status='off';SYNC.bucketId='';
+  dbDel('settings','sync');
+}
+
+
+
+/* ======================================================
+   CLOCK
+   ====================================================== */
+function updateClock(){
+  const now=new Date();
+  const dd=document.getElementById('db-date');
+  const dt=document.getElementById('db-time');
+  if(!dd||!dt)return;
+  const isToday=S.date===todayStr();
+  dd.textContent=fmtDate(S.date)+(isToday?' · Today':'');
+  dd.style.color=isToday?'#fff':'#FFD580';
+  dt.textContent=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  const tb=document.getElementById('today-btn');
+  if(tb)tb.style.display=isToday?'none':'flex';
+}
+setInterval(updateClock,1000);
+
+/* ======================================================
+   SHELL
+   ====================================================== */
+const TABS=[
+  {id:'entry',ico:'',label:'Daily'},
+  {id:'farmers',ico:'',label:'Farmers'},
+  {id:'reports',ico:'',label:'Reports'},
+  {id:'settings',ico:'',label:'Settings'},
+];
+
+function updateSyncBar(){
+  const bar=document.getElementById('sync-bar');
+  if(!bar)return;
+  if(!SYNC.enabled){bar.style.display='none';return;}
+  bar.style.display='block';
+  if(SYNC.status==='synced'){
+    bar.style.background='#E6F4ED';bar.style.color=getComputedStyle(document.documentElement).getPropertyValue('--green');
+    bar.textContent='Synced'+(SYNC.lastSync?' · '+SYNC.lastSync.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'');
+  }else if(SYNC.status==='connecting'){
+    bar.style.background='#FDFAF2';bar.style.color=getComputedStyle(document.documentElement).getPropertyValue('--gold');
+    bar.textContent='Connecting…';
+  }else if(SYNC.status==='error'){
+    bar.style.background='#FDECEA';bar.style.color=getComputedStyle(document.documentElement).getPropertyValue('--red');
+    bar.textContent='Sync error — will retry when online';
+  }
+}
+
+function renderAll(){
+  // remember focused field (if inside #main) so re-rendering doesn't steal keyboard focus mid-typing
+  const _active=document.activeElement;
+  let _focus=null;
+  if(_active&&_active.id&&document.getElementById('main').contains(_active)&&(_active.tagName==='INPUT'||_active.tagName==='TEXTAREA'||_active.tagName==='SELECT')){
+    _focus={id:_active.id,start:_active.selectionStart,end:_active.selectionEnd,value:_active.value};
+  }
+  document.getElementById('hdr-buy').textContent=fmtMoney(S.buyPrice)+'/L';
+  const _sd=saleDayOf(S.saleDate);
+  document.getElementById('hdr-sell').textContent=_sd?fmtMoney(_sd.price)+'/L':'Not set';
+  updateClock();
+  updateSyncBar();
+  // tabs
+  document.getElementById('tabbar').innerHTML=TABS.map(t=>
+    `<button class="tab${S.tab===t.id?' active':''}" data-tab="${t.id}">
+       <span class="ico">${t.ico}</span><span>${t.label}</span>
+     </button>`
+  ).join('');
+  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{S.tab=b.dataset.tab;renderAll();}));
+  // date nav
+  document.getElementById('prev-day').onclick=()=>shiftDate(-1);
+  document.getElementById('next-day').onclick=()=>shiftDate(1);
+  document.getElementById('today-btn').onclick=()=>{S.date=todayStr();S.saleDate=todayStr();S.editing.clear();renderAll();};
+  const dj=document.getElementById('date-jump');
+  const openPicker=()=>{
+    dj.value=S.date;
+    if(dj.showPicker){try{dj.showPicker();}catch{dj.click();}}else{dj.click();}
+  };
+  document.getElementById('db-date').onclick=openPicker;
+  document.getElementById('cal-btn').onclick=openPicker;
+  dj.onchange=()=>{
+    if(!dj.value)return;
+    S.date=dj.value;S.saleDate=dj.value;S.editing.clear();renderAll();
+  };
+  // render tab
+  const m=document.getElementById('main');
+  if(S.tab==='entry')    {m.innerHTML=buildEntry()+buildSale();attachEntry();attachSale();}
+  else if(S.tab==='farmers'){m.innerHTML=buildFarmers();attachFarmers();}
+  else if(S.tab==='reports'){m.innerHTML=buildReports();attachReports();}
+  else                   {m.innerHTML=buildSettings();attachSettings();}
+  // restore focus/cursor so typing isn't interrupted by the re-render above
+  if(_focus){
+    const el=document.getElementById(_focus.id);
+    if(el){
+      if(typeof _focus.value==='string'&&el.value!==_focus.value&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){
+        el.value=_focus.value;
+      }
+      el.focus();
+      if(typeof _focus.start==='number'&&el.setSelectionRange){
+        try{el.setSelectionRange(_focus.start,_focus.end);}catch{}
+      }
+    }
+  }
+}
+
+function shiftDate(d){
+  const dt=new Date(S.date+'T00:00:00');dt.setDate(dt.getDate()+d);
+  S.date=localDateStr(dt);
+  S.saleDate=S.date;
+  S.editing.clear();renderAll();
+}
+
+/* ======================================================
+   ENTRY TAB
+   ====================================================== */
+function buildEntry(){
+  const date=S.date,shift=S.shift;
+  const dayAll=S.entries.filter(e=>e.date===date);
+  const shiftE=dayAll.filter(e=>e.shift===shift);
+  const reported=shiftE.filter(e=>!e.absent).length;
+  const absent=shiftE.filter(e=>e.absent).length;
+  const totalL=shiftE.reduce((s,e)=>s+(e.absent?0:e.liters),0);
+  const totalAmt=totalL*S.buyPrice;
+  const other=shift==='AM'?'PM':'AM';
+
+  const rows=S.farmers
+    .filter(f=>f.udNumber.toLowerCase().includes(S.search.toLowerCase())||f.name.toLowerCase().includes(S.search.toLowerCase()))
+    .sort((a,b)=>a.udNumber.localeCompare(b.udNumber,undefined,{numeric:true}));
+
+  let tableHtml='';
+  if(!S.farmers.length){
+    tableHtml=`<div class="empty">No farmers added yet.<br>Go to <strong>Farmers</strong> tab to add farmers.</div>`;
+  } else if(!rows.length){
+    tableHtml=`<div class="empty">No farmer matches your search.</div>`;
+  } else {
+    tableHtml=`<div class="entry-table-wrap">${rows.map(f=>{
+      const entry=findEntry(f.udNumber,date,shift);
+      const otherE=findEntry(f.udNumber,date,other);
+      const otherNote=otherE?`<div class="er-other">${other==='AM'?'':''} ${otherE.absent?'<span style="color:var(--red)">Absent</span>':fmtL(otherE.liters)}</div>`:'';
+      const key=eKey(f.udNumber,shift);
+      const isEditing=S.editing.has(key);
+      let ctrl='';
+      if(entry&&entry.absent&&!isEditing){
+        ctrl=`<div class="er-ctrl">
+          <span class="absent-pill">Absent</span>
+          <button class="edit-btn" data-action="edit-absent" data-ud="${esc(f.udNumber)}">Edit</button>
+        </div>`;
+      } else if(entry&&!entry.absent&&!isEditing){
+        ctrl=`<div class="er-ctrl">
+          <span class="locked-val">${fmtL(entry.liters)}</span>
+          <span class="tick">OK</span>
+          <button class="edit-btn" data-action="edit-val" data-ud="${esc(f.udNumber)}">Edit</button>
+        </div>`;
+      } else {
+        const prefill=isEditing&&entry?entry.liters:'';
+        ctrl=`<div class="er-ctrl">
+          <input class="liter-inp" id="li-${esc(f.udNumber)}" type="number" step="0.1" min="0.1" inputmode="decimal"
+            data-ud="${esc(f.udNumber)}" value="${prefill}" placeholder="0.0">
+          <button class="enter-btn" data-action="enter" data-ud="${esc(f.udNumber)}">↵</button>
+          <button class="abs-btn" data-action="absent" data-ud="${esc(f.udNumber)}">Absent</button>
+        </div>`;
+      }
+      return `<div class="entry-row${(entry&&!entry.absent&&!isEditing)?' saved':''}">
+        <div class="er-ud-col"><div class="er-ud">${esc(f.udNumber)}</div></div>
+        <div class="er-info"><div class="er-name">${esc(f.name)}</div>${otherNote}</div>
+        ${ctrl}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  return `
+    <div class="sec-title" style="font-size:16px;">Milk Collection</div>
+    <div class="shift-row">
+      <button class="shbtn${shift==='AM'?' on':''}" data-shift="AM">Morning</button>
+      <button class="shbtn${shift==='PM'?' on':''}" data-shift="PM">Evening</button>
+    </div>
+    <div class="sgrid s4" style="margin-bottom:12px;">
+      <div class="scard"><div class="scard-label">Reported</div><div class="scard-val">${reported}/${S.farmers.length}</div></div>
+      <div class="scard"><div class="scard-label">Absent</div><div class="scard-val red">${absent}</div></div>
+      <div class="scard"><div class="scard-label">Liters</div><div class="scard-val" style="font-family:monospace;font-size:15px;">${fmtL(totalL)}</div></div>
+      <div class="scard"><div class="scard-label">Amount</div><div class="scard-val gold" style="font-family:monospace;font-size:14px;">${fmtMoney(totalAmt)}</div></div>
+    </div>
+    <div class="card pad" style="margin-bottom:12px;">
+      <div class="search-wrap">
+        <span class="search-ico"></span>
+        <input class="inp" id="entry-search" placeholder="Search by UD number or name…" value="${esc(S.search)}">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--soft);margin-bottom:9px;">
+      Enter liters → tap <strong>↵</strong> to save &amp; lock · tap the edit icon to correct · <strong>Absent</strong> if no milk
+    </div>
+    ${tableHtml}`;
+}
+
+function attachEntry(){
+  document.querySelectorAll('[data-shift]').forEach(b=>b.addEventListener('click',()=>{S.shift=b.dataset.shift;S.editing.clear();renderAll();}));
+  document.getElementById('entry-search').addEventListener('input',e=>{S.search=e.target.value;renderAll();});
+  document.querySelectorAll('[data-action="enter"]').forEach(b=>b.addEventListener('click',()=>{
+    const inp=b.closest('.er-ctrl').querySelector('.liter-inp');
+    if(inp)doSaveEntry(inp.dataset.ud,inp.value);
+  }));
+  document.querySelectorAll('.liter-inp').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doSaveEntry(inp.dataset.ud,inp.value);}});
+    if(S.pendingFocusUd&&inp.dataset.ud===S.pendingFocusUd){
+      setTimeout(()=>{inp.focus();inp.select();},60);
+    }
+  });
+  S.pendingFocusUd=null;
+  document.querySelectorAll('[data-action="absent"]').forEach(b=>b.addEventListener('click',()=>doMarkAbsent(b.dataset.ud)));
+  document.querySelectorAll('[data-action="edit-val"]').forEach(b=>b.addEventListener('click',async()=>{
+    const ud=b.dataset.ud,entry=findEntry(ud,S.date,S.shift),f=farmerOf(ud);
+    const ok=await appConfirm(`Edit ${S.shift==='AM'?'Morning':'Evening'} entry for ${f?f.name:ud}?\n\nCurrent: ${fmtL(entry?.liters||0)}\n\nThis will unlock the entry for correction.`,{title:'Edit Entry'});
+    if(!ok)return;
+    S.editing.add(eKey(ud,S.shift));S.pendingFocusUd=ud;renderAll();
+  }));
+  document.querySelectorAll('[data-action="edit-absent"]').forEach(b=>b.addEventListener('click',async()=>{
+    const ud=b.dataset.ud,f=farmerOf(ud);
+    const ok=await appConfirm(`Edit absent entry for ${f?f.name:ud}?\nThis will clear the Absent mark.`,{title:'Edit Entry'});
+    if(!ok)return;
+    const ex=findEntry(ud,S.date,S.shift);
+    if(ex)delEntry(ex.id).then(()=>{S.editing.delete(eKey(ud,S.shift));renderAll();});
+  }));
+}
+
+async function doSaveEntry(ud,val){
+  const v=String(val).trim();
+  const l=parseFloat(v);
+  if(!v||isNaN(l)||l<=0){toast('Enter a valid liter value (> 0)',true);return;}
+  const ex=findEntry(ud,S.date,S.shift);
+  if(ex)await saveEntry({...ex,liters:l,absent:false});
+  else await saveEntry({id:uid(),date:S.date,shift:S.shift,udNumber:ud,liters:l,absent:false});
+  S.editing.delete(eKey(ud,S.shift));
+  toast('Saved');renderAll();
+}
+
+async function doMarkAbsent(ud){
+  const f=farmerOf(ud),label=S.shift==='AM'?'Morning':'Evening';
+  const ok=await appConfirm(`Mark ${f?f.name:ud} Absent for ${label} on ${fmtDateShort(S.date)}?`,{title:'Mark Absent'});
+  if(!ok)return;
+  const ex=findEntry(ud,S.date,S.shift);
+  if(ex)await saveEntry({...ex,liters:0,absent:true});
+  else await saveEntry({id:uid(),date:S.date,shift:S.shift,udNumber:ud,liters:0,absent:true});
+  S.editing.delete(eKey(ud,S.shift));
+  toast('Marked absent');renderAll();
+}
+
+/* ======================================================
+   LOCAL SALE TAB
+   ====================================================== */
+function buildSale(){
+  const date=S.saleDate;
+  const day=saleDayOf(date);
+  const daySales=S.sales.filter(s=>s.date===date).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+  const totalSaleL=daySales.reduce((s,x)=>s+x.liters,0);
+  const totalSaleAmt=day?totalSaleL*day.price:0;
+
+  // Today's collection total (to show how much was collected vs sold)
+  const collectedToday=S.entries.filter(e=>e.date===date&&!e.absent).reduce((s,e)=>s+e.liters,0);
+  const remainingL=collectedToday-totalSaleL;
+
+  const priceCard=!day?`
+    <div class="card pad" style="margin-bottom:14px;">
+      <div class="sec-title">Set Today's Sale Price</div>
+      <div style="font-size:12px;color:var(--soft);margin-bottom:10px;">Fix the sale rate once at the start of the day. It locks after saving — you can still correct it later if needed.</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="field" style="flex:1;min-width:140px;"><label>Sale Price (₹ / liter)</label>
+          <input class="inp inp-money" type="number" step="0.01" min="0" id="sd-price" value="${S.sellPrice||''}" placeholder="0.00" inputmode="decimal">
+        </div>
+        <button class="btn btn-primary" id="sd-save">Fix Price &amp; Start Day</button>
+      </div>
+    </div>`
+    :`
+    <div class="sale-price-bar">
+      <div>
+        <div class="sale-price-bar-label">Today's Sale Price · ${fmtDateShort(date)}</div>
+        <div class="sale-price-bar-val">${fmtMoney(day.price)}<span style="font-size:13px;font-weight:400;opacity:.8;">/L</span></div>
+      </div>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;" id="sd-edit">Edit Price</button>
+    </div>`;
+
+  const addCard=!day?'':`
+    <div class="card pad" style="margin-bottom:14px;">
+      <div class="sec-title">Add Liters Sold</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="field" style="flex:1;min-width:100px;"><label>Liters</label>
+          <input class="inp inp-money" type="number" step="0.1" min="0.1" inputmode="decimal" id="sale-liters" placeholder="0.0" value="${esc(S.saleLiterInput)}">
+        </div>
+        <div class="field" style="flex:1.4;min-width:140px;"><label>Note (optional)</label>
+          <input class="inp" id="sale-note" placeholder="e.g. 10 AM round" value="${esc(S.saleNoteInput)}">
+        </div>
+        <button class="btn btn-primary" id="sale-add">+ Add</button>
+      </div>
+    </div>`;
+
+  let listHtml='';
+  if(day&&daySales.length){
+    listHtml=`
+    <div class="sec-title">Today's Sale Entries (${daySales.length})</div>
+    <div class="card" style="overflow:auto;margin-bottom:16px;">
+      <table>
+        <thead><tr><th>Time</th><th style="text-align:right">Liters</th><th style="text-align:right">Amount</th><th>Note</th><th></th></tr></thead>
+        <tbody>
+          ${daySales.map(s=>`
+            <tr class="rowline">
+              <td style="font-size:12px;color:var(--soft);">${new Date(s.createdAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}</td>
+              <td style="text-align:right;font-family:monospace;font-weight:600;">${fmtL(s.liters)}</td>
+              <td style="text-align:right;font-family:monospace;color:var(--blue);">${fmtMoney(s.liters*day.price)}</td>
+              <td style="font-size:12px;color:var(--soft);">${s.note?esc(s.note):'—'}</td>
+              <td style="text-align:right;"><button class="btn btn-xs" style="color:var(--red);border:1px solid var(--red);background:#fff;" data-sale-del="${esc(s.id)}">Delete</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } else if(day){
+    listHtml=`<div class="empty" style="margin-bottom:16px;">No liters added yet today. Use the form above as each sale happens.</div>`;
+  }
+
+  return `
+    <div class="divider" style="margin-top:20px;"></div>
+    <div class="sec-title" style="font-size:16px;">Local Sale</div>
+    ${priceCard}
+    <div class="sgrid s4" style="margin-bottom:14px;">
+      <div class="scard"><div class="scard-label">Collected</div><div class="scard-val" style="font-family:monospace;font-size:15px;">${fmtL(collectedToday)}</div></div>
+      <div class="scard"><div class="scard-label">Sold</div><div class="scard-val blue" style="font-family:monospace;font-size:15px;">${fmtL(totalSaleL)}</div></div>
+      <div class="scard"><div class="scard-label">Remaining</div><div class="scard-val${remainingL<0?' red':''}" style="font-family:monospace;font-size:15px;">${fmtL(Math.max(remainingL,0))}</div></div>
+      <div class="scard"><div class="scard-label">Sale Amount</div><div class="scard-val gold" style="font-family:monospace;font-size:14px;">${fmtMoney(totalSaleAmt)}</div></div>
+    </div>
+    ${addCard}
+    ${listHtml}`;
+}
+
+function attachSale(){
+  const sdSave=document.getElementById('sd-save');
+  if(sdSave)sdSave.onclick=async()=>{
+    const v=parseFloat(document.getElementById('sd-price').value);
+    if(isNaN(v)||v<0){toast('Enter a valid price',true);return;}
+    await saveSaleDay({date:S.saleDate,price:v,lockedAt:new Date().toISOString()});
+    toast('Price fixed for the day');renderAll();
+  };
+  const sdEdit=document.getElementById('sd-edit');
+  if(sdEdit)sdEdit.onclick=async()=>{
+    const day=saleDayOf(S.saleDate);
+    const ok=await appConfirm(`Edit today's sale price?\n\nCurrent: ${fmtMoney(day.price)}/L\n\nThis unlocks the price for correction. Existing entries' amounts will use the new price.`,{title:'Edit Sale Price'});
+    if(!ok)return;
+    delSaleDay(S.saleDate).then(renderAll);
+  };
+  const addBtn=document.getElementById('sale-add');
+  if(addBtn)addBtn.onclick=doAddSaleLiters;
+  const lInp=document.getElementById('sale-liters');
+  if(lInp){
+    lInp.addEventListener('input',e=>{S.saleLiterInput=e.target.value;});
+    lInp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doAddSaleLiters();}});
+  }
+  const nInp=document.getElementById('sale-note');
+  if(nInp)nInp.addEventListener('input',e=>{S.saleNoteInput=e.target.value;});
+  document.querySelectorAll('[data-sale-del]').forEach(b=>b.addEventListener('click',()=>doDelSaleEntry(b.dataset.saleDel)));
+}
+
+async function doAddSaleLiters(){
+  const l=parseFloat(document.getElementById('sale-liters').value);
+  if(isNaN(l)||l<=0){toast('Enter a valid liter value (> 0)',true);return;}
+  const note=document.getElementById('sale-note').value.trim();
+  await saveSale({id:uid(),date:S.saleDate,liters:l,note,createdAt:new Date().toISOString()});
+  S.saleLiterInput='';S.saleNoteInput='';
+  toast('Added');renderAll();
+}
+
+async function doDelSaleEntry(id){
+  const ok=await appConfirm('Remove this sale entry?',{title:'Remove Entry',danger:true});
+  if(!ok)return;
+  await delSale(id);toast('Removed');renderAll();
+}
+
+
+/* ======================================================
+   FARMERS TAB
+   ====================================================== */
+function buildFarmers(){
+  const ef=S.fEdit?S.farmers.find(f=>f.udNumber===S.fEdit):null;
+  const filtered=S.farmers
+    .filter(f=>f.udNumber.toLowerCase().includes(S.fSearch.toLowerCase())||f.name.toLowerCase().includes(S.fSearch.toLowerCase()))
+    .sort((a,b)=>a.udNumber.localeCompare(b.udNumber,undefined,{numeric:true}));
+  return `
+    <div class="card pad" style="margin-bottom:16px;">
+      <div class="sec-title">${ef?'Edit Farmer':'Add Farmer'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="field"><label>UD Number</label>
+          <input class="inp" id="f-ud" value="${ef?esc(ef.udNumber):''}" placeholder="e.g. UD-014" ${ef?'disabled':''} style="font-family:monospace;">
+        </div>
+        <div class="field"><label>Name</label>
+          <input class="inp" id="f-name" value="${ef?esc(ef.name):''}" placeholder="Farmer's full name">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px;"><label>Phone (optional)</label>
+        <input class="inp" id="f-phone" value="${ef&&ef.phone?esc(ef.phone):''}" placeholder="Mobile number">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" id="f-submit">${ef?'Save Changes':'+ Add Farmer'}</button>
+        ${ef?`<button class="btn btn-ghost" id="f-cancel">Cancel</button>`:''}
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+      <div class="sec-title" style="margin-bottom:0;">Farmers (${S.farmers.length})</div>
+      <div class="search-wrap" style="max-width:200px;">
+        <span class="search-ico"></span>
+        <input class="inp" id="f-search" placeholder="Search…" value="${esc(S.fSearch)}">
+      </div>
+    </div>
+    ${!filtered.length
+      ?`<div class="empty">${!S.farmers.length?'No farmers yet. Add your first farmer above.':'No matches.'}</div>`
+      :`<div class="card" style="overflow:auto;">
+        <table>
+          <thead><tr><th>UD No.</th><th>Name</th><th>Phone</th><th></th></tr></thead>
+          <tbody>${filtered.map(f=>`
+            <tr class="rowline">
+              <td style="font-family:monospace;font-size:12px;">${esc(f.udNumber)}</td>
+              <td style="font-weight:600;">${esc(f.name)}</td>
+              <td style="color:var(--soft);">${f.phone?esc(f.phone):'—'}</td>
+              <td style="text-align:right;white-space:nowrap;">
+                <button class="btn btn-ghost btn-xs" data-fe="${esc(f.udNumber)}" style="margin-right:4px;">Edit</button>
+                <button class="btn btn-xs" style="color:var(--red);border:1px solid var(--red);background:#fff;" data-fd="${esc(f.udNumber)}">Delete</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`}`;
+}
+function attachFarmers(){
+  document.getElementById('f-search').addEventListener('input',e=>{S.fSearch=e.target.value;renderAll();});
+  document.getElementById('f-submit').onclick=async()=>{
+    const ud=document.getElementById('f-ud').value.trim();
+    const name=document.getElementById('f-name').value.trim();
+    const phone=document.getElementById('f-phone').value.trim();
+    if(!ud||!name){toast('UD number and name required',true);return;}
+    if(!S.fEdit&&S.farmers.find(f=>f.udNumber===ud)){toast('UD number already exists',true);return;}
+    await saveFarmer({udNumber:ud,name,phone});S.fEdit=null;toast('Farmer saved');renderAll();
+  };
+  const fc=document.getElementById('f-cancel');if(fc)fc.onclick=()=>{S.fEdit=null;renderAll();};
+  document.querySelectorAll('[data-fe]').forEach(b=>b.addEventListener('click',()=>{S.fEdit=b.dataset.fe;renderAll();}));
+  document.querySelectorAll('[data-fd]').forEach(b=>b.addEventListener('click',async()=>{
+    const f=farmerOf(b.dataset.fd);
+    const ok=await appConfirm(`Delete ${f?f.name:b.dataset.fd}?`,{title:'Delete Farmer',danger:true});
+    if(!ok)return;
+    await delFarmer(b.dataset.fd);toast('Removed');renderAll();
+  }));
+}
+
+/* ======================================================
+   REPORTS TAB
+   ====================================================== */
+function reportRange(){
+  const t=todayStr();const{first,last}=monthBounds(t);const p=S.rPreset;
+  if(p==='today') return{start:t,end:t,title:`Today — ${fmtDateShort(t)}`};
+  if(p==='first15'){const e=first.slice(0,8)+'15';return{start:first,end:e,title:`1–15 · ${fmtDateShort(first)} to ${fmtDateShort(e)}`};}
+  if(p==='last15'){const s=first.slice(0,8)+'16';return{start:s,end:last,title:`16–End · ${fmtDateShort(s)} to ${fmtDateShort(last)}`};}
+  if(p==='month') return{start:first,end:last,title:`Month · ${fmtDateShort(first)} to ${fmtDateShort(last)}`};
+  return{start:S.rStart,end:S.rEnd,title:`Custom · ${fmtDateShort(S.rStart)} to ${fmtDateShort(S.rEnd)}`};
+}
+function calcCollectionRows(start,end){
+  const map=new Map();
+  S.entries.filter(e=>e.date>=start&&e.date<=end).forEach(e=>{
+    if(!map.has(e.udNumber))map.set(e.udNumber,{ud:e.udNumber,am:0,pm:0,total:0,absences:0});
+    const r=map.get(e.udNumber);
+    if(e.absent){r.absences++;return;}
+    if(e.shift==='AM')r.am+=e.liters;else r.pm+=e.liters;
+    r.total+=e.liters;
+  });
+  return Array.from(map.values()).sort((a,b)=>a.ud.localeCompare(b.ud,undefined,{numeric:true}));
+}
+function calcSaleDayRows(start,end){
+  const map=new Map();
+  S.sales.filter(s=>s.date>=start&&s.date<=end).forEach(s=>{
+    if(!map.has(s.date))map.set(s.date,{date:s.date,total:0,entries:[]});
+    map.get(s.date).entries.push(s);
+    map.get(s.date).total+=s.liters;
+  });
+  return Array.from(map.values()).map(r=>{
+    const day=saleDayOf(r.date);
+    const price=day?day.price:0;
+    return{...r,price,amount:r.total*price,priceSet:!!day};
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function buildReports(){
+  const{start,end,title}=reportRange();
+  const cRows=calcCollectionRows(start,end);
+  const sRows=calcSaleDayRows(start,end);
+  const rate=S.rRate;
+  const gCollL=cRows.reduce((s,r)=>s+r.total,0);
+  const gCollAmt=rate!=null?gCollL*rate:0;
+  const gSaleL=sRows.reduce((s,r)=>s+r.total,0);
+  const gSaleAmt=sRows.reduce((s,r)=>s+r.amount,0);
+  const gProfit=rate!=null?(gSaleAmt-gCollAmt):null;
+
+  const presets=[{id:'today',label:'Today'},{id:'first15',label:'1–15th'},{id:'last15',label:'16–End'},{id:'month',label:'Month'},{id:'custom',label:'Custom'}];
+
+  let collBody='',saleBody='';
+
+  if(rate==null){
+    collBody=`<div class="empty" style="margin-bottom:14px;">Enter rate below and tap <strong>Generate</strong> to see collection calculations.</div>`;
+  } else if(!cRows.length){
+    collBody=`<div class="empty" style="margin-bottom:14px;">No collection entries for this period.</div>`;
+  } else {
+    const topUd=[...cRows].sort((a,b)=>b.total-a.total)[0]?.ud;
+    collBody=`
+      <div class="sgrid s4" style="margin-bottom:14px;">
+        <div class="scard"><div class="scard-label">Farmers</div><div class="scard-val">${cRows.length}</div></div>
+        <div class="scard"><div class="scard-label">Absences</div><div class="scard-val red">${cRows.reduce((s,r)=>s+r.absences,0)}</div></div>
+        <div class="scard"><div class="scard-label">Total Liters</div><div class="scard-val" style="font-size:15px;font-family:monospace;">${fmtL(gCollL)}</div></div>
+        <div class="scard"><div class="scard-label">Total Payable</div><div class="scard-val gold" style="font-size:14px;font-family:monospace;">${fmtMoney(gCollAmt)}</div></div>
+      </div>
+      <div class="sec-title" style="font-size:13px;">Individual Payout</div>
+      <div class="payout-grid" style="margin-bottom:16px;">
+        ${cRows.map(r=>{
+          const f=farmerOf(r.ud),amt=r.total*rate,isTop=r.ud===topUd;
+          return `<div class="payout-card${isTop?' top':''}" data-cstmt="${esc(r.ud)}">
+            ${isTop?`<div style="font-size:9px;color:var(--gold);font-weight:700;margin-bottom:3px;">TOP SUPPLIER</div>`:''}
+            <div style="font-size:12px;font-weight:700;">${f?esc(f.name):'Unknown'}</div>
+            <div style="font-size:10px;color:var(--soft);font-family:monospace;margin-bottom:5px;">${esc(r.ud)}</div>
+            <div style="font-size:11px;color:var(--soft);">${fmtL(r.total)}</div>
+            <div style="font-size:17px;font-weight:700;color:var(--forest);font-family:monospace;">${fmtMoney(amt)}</div>
+            ${r.absences?`<div style="font-size:10px;color:var(--red);">${r.absences} absence${r.absences>1?'s':''}</div>`:''}
+            <div style="font-size:10px;color:var(--clay);margin-top:5px;">Tap for statement →</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="card" style="overflow:auto;margin-bottom:6px;">
+        <table>
+          <thead><tr><th>UD</th><th>Name</th><th style="text-align:right">Morning</th><th style="text-align:right">Evening</th><th style="text-align:right">Total</th><th style="text-align:right">Absent</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+          <tbody>
+            ${cRows.map(r=>{const f=farmerOf(r.ud);return `<tr class="rowline">
+              <td style="font-family:monospace;font-size:11px;">${esc(r.ud)}</td>
+              <td style="font-weight:600;font-size:13px;">${f?esc(f.name):'<span style="color:var(--red)">Unknown</span>'}</td>
+              <td style="text-align:right;font-family:monospace;font-size:13px;">${fmtL(r.am)}</td>
+              <td style="text-align:right;font-family:monospace;font-size:13px;">${fmtL(r.pm)}</td>
+              <td style="text-align:right;font-family:monospace;font-weight:700;font-size:13px;">${fmtL(r.total)}</td>
+              <td style="text-align:right;color:${r.absences?'var(--red)':'var(--soft)'};font-size:13px;">${r.absences||'—'}</td>
+              <td style="text-align:right;font-family:monospace;font-weight:700;color:var(--forest);font-size:13px;">${fmtMoney(r.total*rate)}</td>
+              <td><button class="btn btn-ghost btn-xs no-print" data-cstmt="${esc(r.ud)}">Stmt</button></td>
+            </tr>`;}).join('')}
+            <tr style="background:var(--cream2);font-weight:700;">
+              <td colspan="4" style="padding:10px 12px;">Grand Total</td>
+              <td style="text-align:right;font-family:monospace;">${fmtL(gCollL)}</td><td></td>
+              <td style="text-align:right;font-family:monospace;color:var(--gold);">${fmtMoney(gCollAmt)}</td><td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  if(!sRows.length){
+    saleBody=`<div class="empty" style="margin-bottom:14px;">No local sale entries for this period.</div>`;
+  } else {
+    saleBody=`
+      <div class="sgrid s3" style="margin-bottom:14px;">
+        <div class="scard"><div class="scard-label">Days with Sale</div><div class="scard-val">${sRows.length}</div></div>
+        <div class="scard"><div class="scard-label">Liters Sold</div><div class="scard-val blue" style="font-size:15px;font-family:monospace;">${fmtL(gSaleL)}</div></div>
+        <div class="scard"><div class="scard-label">Sale Revenue</div><div class="scard-val gold" style="font-size:14px;font-family:monospace;">${fmtMoney(gSaleAmt)}</div></div>
+      </div>
+      <div class="card" style="overflow:auto;margin-bottom:6px;">
+        <table>
+          <thead><tr><th>Date</th><th style="text-align:right">Price/L</th><th style="text-align:right">Liters</th><th style="text-align:right">Amount</th></tr></thead>
+          <tbody>
+            ${sRows.map(r=>`<tr class="rowline">
+              <td style="font-weight:600;font-size:13px;">${fmtDateShort(r.date)}</td>
+              <td style="text-align:right;font-family:monospace;font-size:13px;">${r.priceSet?fmtMoney(r.price):'<span style="color:var(--red)">not set</span>'}</td>
+              <td style="text-align:right;font-family:monospace;font-size:13px;">${fmtL(r.total)}</td>
+              <td style="text-align:right;font-family:monospace;font-weight:700;color:var(--blue);font-size:13px;">${fmtMoney(r.amount)}</td>
+            </tr>`).join('')}
+            <tr style="background:var(--cream2);font-weight:700;">
+              <td>Grand Total</td><td></td>
+              <td style="text-align:right;font-family:monospace;">${fmtL(gSaleL)}</td>
+              <td style="text-align:right;font-family:monospace;color:var(--gold);">${fmtMoney(gSaleAmt)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  return `
+    <div class="chips">${presets.map(p=>`<button class="chip${S.rPreset===p.id?' on':''}" data-preset="${p.id}">${p.label}</button>`).join('')}</div>
+    ${S.rPreset==='custom'?`<div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div class="field"><label>From</label><input class="inp" type="date" id="r-start" value="${S.rStart}"></div>
+      <div class="field"><label>To</label><input class="inp" type="date" id="r-end" value="${S.rEnd}"></div>
+    </div>`:''}
+    <div class="sec-title">${title}</div>
+
+    <!-- Rate box -->
+    <div class="card pad" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;">
+        <div class="field"><label>Buy Rate for Report (₹/L)</label>
+          <input class="inp inp-money" type="number" step="0.01" min="0" id="r-rate" value="${S.rRateInput||S.buyPrice}" style="width:140px;" inputmode="decimal">
+        </div>
+        <button class="btn btn-primary" id="r-gen">Generate Report</button>
+        ${rate!=null?`<button class="btn btn-ghost no-print" id="r-csv">CSV</button><button class="btn btn-ghost no-print" id="r-print">Print</button>`:''}
+      </div>
+      ${rate!=null?`
+      <div class="divider"></div>
+      <div class="sgrid s3">
+        <div class="scard" style="background:var(--cream2);">
+          <div class="scard-label">Total Collection Cost</div>
+          <div class="scard-val" style="font-size:14px;font-family:monospace;">${fmtMoney(gCollAmt)}</div>
+        </div>
+        <div class="scard" style="background:var(--cream2);">
+          <div class="scard-label">Total Sale Revenue</div>
+          <div class="scard-val blue" style="font-size:14px;font-family:monospace;">${fmtMoney(gSaleAmt)}</div>
+        </div>
+        <div class="scard" style="background:${gProfit!=null&&gProfit>=0?'#E6F4ED':'#FDECEA'};">
+          <div class="scard-label">Net Profit / Loss</div>
+          <div class="scard-val ${gProfit!=null&&gProfit>=0?'green':'red'}" style="font-size:14px;font-family:monospace;">${gProfit!=null?fmtMoney(gProfit):'—'}</div>
+        </div>
+      </div>`:''}
+    </div>
+
+    <!-- Collection section -->
+    <div class="sec-title" style="display:flex;align-items:center;gap:8px;">
+      <span>Collection Report</span>
+      <span class="tag-green">${fmtL(gCollL)}</span>
+    </div>
+    ${collBody}
+
+    <!-- Sale section -->
+    <div class="sec-title" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+      <span>Local Sale Report</span>
+      <span class="tag-blue">${fmtL(gSaleL)}</span>
+      <span class="tag-blue">${fmtMoney(gSaleAmt)}</span>
+    </div>
+    ${saleBody}`;
+}
+
+function attachReports(){
+  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{S.rPreset=b.dataset.preset;S.rRate=null;renderAll();}));
+  const rs=document.getElementById('r-start');if(rs)rs.addEventListener('change',e=>{S.rStart=e.target.value;S.rRate=null;renderAll();});
+  const re=document.getElementById('r-end');if(re)re.addEventListener('change',e=>{S.rEnd=e.target.value;S.rRate=null;renderAll();});
+  document.getElementById('r-rate').addEventListener('input',e=>{S.rRateInput=e.target.value;S.rRate=null;});
+  document.getElementById('r-gen').onclick=()=>{
+    const r=parseFloat(S.rRateInput||S.buyPrice);
+    if(isNaN(r)||r<0){toast('Enter a valid buy rate per liter',true);return;}
+    S.rRate=r;S.rRateInput=String(r);renderAll();
+  };
+  const rcsv=document.getElementById('r-csv');if(rcsv)rcsv.onclick=exportAllCSV;
+  const rp=document.getElementById('r-print');if(rp)rp.onclick=()=>window.print();
+  document.querySelectorAll('[data-cstmt]').forEach(el=>el.addEventListener('click',()=>openCollStmt(el.dataset.cstmt)));
+}
+
+function exportAllCSV(){
+  const{start,end}=reportRange();const rate=S.rRate;
+  const cRows=calcCollectionRows(start,end);
+  const sRows=calcSaleDayRows(start,end);
+  let csv='COLLECTION REPORT\n';
+  csv+=['UD Number','Name','Morning (L)','Evening (L)','Total (L)','Absences','Rate (Rs/L)','Amount (Rs)'].map(c=>`"${c}"`).join(',')+'\n';
+  cRows.forEach(r=>{const f=farmerOf(r.ud);csv+=[r.ud,f?f.name:'Unknown',r.am.toFixed(2),r.pm.toFixed(2),r.total.toFixed(2),r.absences,(rate||0).toFixed(2),(r.total*(rate||0)).toFixed(2)].map(c=>`"${c}"`).join(',')+'\n';});
+  csv+='\nLOCAL SALE REPORT\n';
+  csv+=['Date','Price (Rs/L)','Liters Sold','Amount (Rs)'].map(c=>`"${c}"`).join(',')+'\n';
+  sRows.forEach(r=>{csv+=[fmtDateShort(r.date),r.price.toFixed(2),r.total.toFixed(2),r.amount.toFixed(2)].map(c=>`"${c}"`).join(',')+'\n';});
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`milkledger-report-${start}-to-${end}.csv`;a.click();
+  URL.revokeObjectURL(url);toast('Report downloaded');
+}
+
+function openCollStmt(ud){
+  const rate=S.rRate||0;const{start,end}=reportRange();const f=farmerOf(ud);
+  const allE=S.entries.filter(e=>e.udNumber===ud&&e.date>=start&&e.date<=end).sort((a,b)=>a.date===b.date?a.shift.localeCompare(b.shift):a.date.localeCompare(b.date));
+  const totalL=allE.reduce((s,e)=>s+(e.absent?0:e.liters),0);
+  const amL=allE.filter(e=>e.shift==='AM'&&!e.absent).reduce((s,e)=>s+e.liters,0);
+  const pmL=allE.filter(e=>e.shift==='PM'&&!e.absent).reduce((s,e)=>s+e.liters,0);
+  const absences=allE.filter(e=>e.absent).length;
+  const dm=new Map();allE.forEach(e=>{if(!dm.has(e.date))dm.set(e.date,{am:null,pm:null});dm.get(e.date)[e.shift==='AM'?'am':'pm']=e;});
+  const days=[...dm.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const bars=days.map(([,d])=>((d.am&&!d.am.absent?d.am.liters:0)+(d.pm&&!d.pm.absent?d.pm.liters:0)));
+  const maxB=Math.max(...bars,.01);const bw=100/(bars.length||1);
+  const chart=bars.length<2?'':
+    `<svg viewBox="0 0 100 30" preserveAspectRatio="none" style="width:100%;height:40px;display:block;margin:8px 0;">
+      ${bars.map((b,i)=>{const h=(b/maxB)*28;return`<rect x="${i*bw+bw*.1}" y="${30-h}" width="${bw*.8}" height="${h}" fill="var(--forest)" rx="1"/>`;}).join('')}
+    </svg>`;
+  const root=document.getElementById('modal-root');
+  root.innerHTML=`<div class="modal-bg" id="mbg">
+    <div class="modal">
+      <div class="modal-hdr no-print"><div class="modal-title">Collection Statement</div><button class="modal-close" id="mclose">✕</button></div>
+      <div style="background:var(--cream2);border-radius:8px;padding:11px 13px;margin-bottom:12px;">
+        <div style="font-size:17px;font-weight:700;">${f?esc(f.name):'Unknown'}
+          <span style="font-size:12px;color:var(--soft);font-family:monospace;font-weight:400;margin-left:6px;">${esc(ud)}</span>
+        </div>
+        ${f&&f.phone?`<div style="font-size:12px;color:var(--soft);">${esc(f.phone)}</div>`:''}
+        <div style="font-size:11px;color:var(--soft);margin-top:3px;">${fmtDateShort(start)} → ${fmtDateShort(end)} · ${fmtMoney(rate)}/L</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div class="scard"><div class="scard-label">Morning</div><div class="scard-val" style="font-size:14px;font-family:monospace;">${fmtL(amL)}</div></div>
+        <div class="scard"><div class="scard-label">Evening</div><div class="scard-val" style="font-size:14px;font-family:monospace;">${fmtL(pmL)}</div></div>
+        <div class="scard"><div class="scard-label">Absences</div><div class="scard-val red" style="font-size:14px;">${absences}</div></div>
+      </div>
+      ${chart}
+      ${!days.length?`<div class="empty">No entries.</div>`:`
+        <div style="font-size:11px;font-weight:600;color:var(--soft);margin-bottom:6px;">Day-by-Day</div>
+        <div style="max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;">
+          <table>
+            <thead><tr><th>Date</th><th style="text-align:right">Morning</th><th style="text-align:right">Evening</th><th style="text-align:right">Amount</th></tr></thead>
+            <tbody>${days.map(([date,d])=>{
+              const al=d.am&&!d.am.absent?d.am.liters:0,pl=d.pm&&!d.pm.absent?d.pm.liters:0,tot=al+pl;
+              return `<tr class="rowline">
+                <td style="font-size:12px;">${fmtDateShort(date)}</td>
+                <td style="text-align:right;font-size:12px;font-family:monospace;">${d.am?(d.am.absent?'<span style="color:var(--red)">Absent</span>':fmtL(al)):'—'}</td>
+                <td style="text-align:right;font-size:12px;font-family:monospace;">${d.pm?(d.pm.absent?'<span style="color:var(--red)">Absent</span>':fmtL(pl)):'—'}</td>
+                <td style="text-align:right;font-size:12px;font-family:monospace;">${tot>0?fmtMoney(tot*rate):'—'}</td>
+              </tr>`;}).join('')}</tbody>
+          </table>
+        </div>`}
+      <div style="background:var(--forest);color:#fff;border-radius:10px;padding:13px 15px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:10px;opacity:.75;">Total Milk</div><div style="font-size:16px;font-weight:700;font-family:monospace;">${fmtL(totalL)}</div></div>
+        <div style="text-align:right;"><div style="font-size:10px;opacity:.75;">Money Owed</div><div style="font-size:22px;font-weight:700;font-family:monospace;color:#FFD580;">${fmtMoney(totalL*rate)}</div></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;" class="no-print">
+        <button class="btn btn-ghost" id="mp">Print</button>
+        <button class="btn btn-ghost" id="mc">CSV</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('mclose').onclick=()=>root.innerHTML='';
+  document.getElementById('mbg').onclick=e=>{if(e.target.id==='mbg')root.innerHTML='';};
+  document.getElementById('mp').onclick=()=>window.print();
+  document.getElementById('mc').onclick=()=>{
+    const{start,end}=reportRange();
+    const hdr=['Date','Shift','Liters','Amount (Rs)'];
+    const lines=allE.map(e=>[fmtDateShort(e.date),e.shift==='AM'?'Morning':'Evening',e.absent?'ABSENT':e.liters.toFixed(2),e.absent?'0.00':(e.liters*rate).toFixed(2)]);
+    lines.push(['','Total',totalL.toFixed(2),(totalL*rate).toFixed(2)]);
+    const csv=[hdr,...lines].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`stmt-${ud}-${start}-to-${end}.csv`;a.click();URL.revokeObjectURL(url);
+  };
+}
+
+/* ======================================================
+   SETTINGS TAB
+   ====================================================== */
+function buildSettings(){
+  return `
+    <div class="card pad" style="max-width:440px;margin-bottom:16px;">
+      <div class="sec-title">Price Settings</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="field"><label>Buy Rate (₹/L) — pay to farmers</label>
+          <input class="inp inp-money" type="number" step="0.01" min="0" id="s-buy" value="${S.buyPrice}" inputmode="decimal">
+        </div>
+        <div class="field"><label>Default Sale Rate (₹/L) — suggested when fixing each day's price</label>
+          <input class="inp inp-money" type="number" step="0.01" min="0" id="s-sell" value="${S.sellPrice}" inputmode="decimal">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="s-save">Save Prices</button>
+      <div style="font-size:11px;color:var(--soft);margin-top:9px;">Both rates can be overridden per report or per sale. These are just defaults.</div>
+    </div>
+    <div class="card pad" style="max-width:440px;margin-bottom:16px;">
+      <div class="sec-title">Multi-Device Sync</div>
+      ${SYNC.enabled?`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="width:9px;height:9px;border-radius:50%;background:${SYNC.status==='synced'?'var(--green)':SYNC.status==='error'?'var(--red)':'var(--gold)'};display:inline-block;"></span>
+          <span style="font-size:13px;font-weight:600;">${SYNC.status==='synced'?'Connected & syncing':SYNC.status==='error'?'Connection error (will retry)':'Connecting…'}</span>
+        </div>
+        ${SYNC.status==='error'&&SYNC.errorMsg?`<div style="font-size:12px;color:var(--red);background:#FDECEA;border-radius:6px;padding:8px 10px;margin-bottom:12px;font-family:monospace;word-break:break-word;">${esc(SYNC.errorMsg)}</div>`:''}
+        <div style="font-size:12px;color:var(--soft);margin-bottom:12px;">Sync Code: <strong style="font-family:monospace;">${esc(SYNC.bucketId)}</strong><br>Enter this exact code on your other phone (Settings → Join Existing Sync) to see the same data. Works offline — changes sync automatically once back online.</div>
+        <button class="btn btn-red btn-sm" id="s-sync-off">Disconnect Sync</button>
+      `:`
+        <div style="font-size:13px;color:var(--soft);margin-bottom:12px;">No account or setup needed — tap the button below and this app creates a private sync space for you. Still fully usable offline in between; changes sync whenever you're back online. (The sync space itself is only cleared if left completely untouched for 75 days — normal use resets that.)</div>
+        <button class="btn btn-primary" id="s-sync-new" style="margin-bottom:14px;">Create New Sync (do this on ONE phone first)</button>
+        <div style="text-align:center;color:var(--soft);font-size:12px;margin-bottom:14px;">— or, if you already created one on another phone —</div>
+        <div class="field" style="margin-bottom:10px;"><label>Sync Code (from your other phone)</label>
+          <input class="inp" id="sy-code" style="font-family:monospace;" placeholder="paste the code shown there">
+        </div>
+        <button class="btn btn-ghost" id="s-sync-join">Join Existing Sync</button>
+      `}
+    </div>
+    <div class="card pad" style="max-width:440px;margin-bottom:16px;">
+      <div class="sec-title">Backup &amp; Restore</div>
+      <div style="font-size:13px;color:var(--soft);margin-bottom:12px;">All your data is stored in this browser only${SYNC.enabled?' (plus synced to your private sync space)':''}. Export regularly before clearing browser data or switching devices.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="s-exp">Export Backup (.json)</button>
+        <label class="btn btn-ghost" style="cursor:pointer;">Import Backup <input type="file" id="s-imp" accept=".json" style="display:none;"></label>
+      </div>
+    </div>
+    <div class="card pad" style="max-width:440px;">
+      <div class="sec-title" style="color:var(--red);">Danger Zone</div>
+      <div style="font-size:13px;color:var(--soft);margin-bottom:12px;">Permanently deletes all farmers, entries, customers, and sales. Cannot be undone.</div>
+      <button class="btn btn-red" id="s-clear">Clear All Data</button>
+    </div>`;
+}
+function attachSettings(){
+  document.getElementById('s-save').onclick=async()=>{
+    const buy=parseFloat(document.getElementById('s-buy').value);
+    const sell=parseFloat(document.getElementById('s-sell').value);
+    if(isNaN(buy)||buy<0||isNaN(sell)||sell<0){toast('Enter valid prices',true);return;}
+    S.buyPrice=buy;S.sellPrice=sell;await saveSettings();toast('Prices saved');renderAll();
+  };
+  document.getElementById('s-exp').onclick=exportBackup;
+  document.getElementById('s-imp').onchange=importBackup;
+  const syNew=document.getElementById('s-sync-new');
+  if(syNew)syNew.onclick=async()=>{
+    syNew.disabled=true;toast('Creating your sync space…');
+    try{
+      const{id,ts}=await createSyncSpace();
+      const ok=await connectSync(id,true,ts);
+      if(ok){toast('Sync space created');renderAll();}else{renderAll();}
+    }catch(err){
+      toast('Could not create sync: '+((err&&err.message)||err),true);syNew.disabled=false;
+    }
+  };
+  const syJoin=document.getElementById('s-sync-join');
+  if(syJoin)syJoin.onclick=async()=>{
+    const code=document.getElementById('sy-code').value.trim();
+    if(!code){toast('Paste the Sync Code from your other phone',true);return;}
+    toast('Connecting…');
+    const ok=await connectSync(code,false);
+    if(ok){toast('Connected & syncing');renderAll();}else{renderAll();}
+  };
+  const syOff=document.getElementById('s-sync-off');
+  if(syOff)syOff.onclick=async()=>{
+    const ok=await appConfirm('Disconnect this phone from sync? Local data stays, but stops sending/receiving updates.',{title:'Disconnect Sync'});
+    if(!ok)return;
+    disconnectSync();toast('Sync disconnected');renderAll();
+  };
+  document.getElementById('s-clear').onclick=async()=>{
+    const ok=await appConfirm('Delete ALL data permanently? This cannot be undone.',{title:'Clear All Data',danger:true,yesLabel:'Yes, Delete Everything'});
+    if(!ok)return;
+    await clearAll();toast('All data cleared');renderAll();
+  };
+}
+function exportBackup(){
+  const data={farmers:S.farmers,entries:S.entries,customers:S.customers,sales:S.sales,saleDays:S.saleDays,buyPrice:S.buyPrice,sellPrice:S.sellPrice,exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`milkledger-backup-${todayStr()}.json`;a.click();
+  URL.revokeObjectURL(url);toast('Backup downloaded');
+}
+function importBackup(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      const ok=await appConfirm('This will replace all current data with the backup. Continue?',{title:'Restore Backup',danger:true});
+      if(!ok)return;
+      await clearAll();
+      for(const f of(data.farmers||[]))await saveFarmer(f);
+      for(const en of(data.entries||[]))await saveEntry(en);
+      for(const c of(data.customers||[]))await saveCustomer(c);
+      for(const s of(data.sales||[]))await saveSale(s);
+      for(const d of(data.saleDays||[]))await saveSaleDay(d);
+      if(typeof data.buyPrice==='number')S.buyPrice=data.buyPrice;
+      if(typeof data.sellPrice==='number')S.sellPrice=data.sellPrice;
+      await saveSettings();
+      toast('Backup restored');renderAll();
+    }catch{toast('Could not read backup file',true);}
+  };
+  reader.readAsText(file);
+}
+
+/* ======================================================
+   OFFLINE & PWA INSTALL
+   ====================================================== */
+function updateOffline(){document.getElementById('offline-bar').style.display=navigator.onLine?'none':'block';}
+window.addEventListener('online',()=>{updateOffline();if(SYNC.enabled)pushState();});
+window.addEventListener('offline',updateOffline);
+updateOffline();
+let _dip=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_dip=e;
+  const bar=document.getElementById('install-bar');bar.style.display='block';
+  bar.onclick=()=>{_dip.prompt();_dip.userChoice.then(()=>{_dip=null;bar.style.display='none';});};
+});
+
+/* ======================================================
+   SERVICE WORKER REGISTRATION
+   ====================================================== */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(err=>{
+    // Fallback: inline SW blob for when served directly as file://
+    const sw=`const C='ml-v3';self.addEventListener('install',e=>{e.waitUntil(self.skipWaiting());});self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.open(C).then(c=>c.match(e.request).then(h=>{const n=fetch(e.request).then(r=>{if(r&&r.status===200)c.put(e.request,r.clone());return r;}).catch(()=>h);return h||n;})));});`;
+    const blob=new Blob([sw],{type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+  });
+}
+
+/* ======================================================
+   BOOT
+   ====================================================== */
+async function boot(){
+  document.getElementById('main').innerHTML=`<div class="empty" style="margin-top:40px;font-size:16px;">Loading Milk Ledger…</div>`;
+  try{
+    await openDB();
+    const[farmers,entries,customers,sales,saleDays,settings]=await Promise.all([
+      dbAll('farmers'),dbAll('entries'),dbAll('customers'),dbAll('sales'),dbAll('saleDays'),dbAll('settings')
+    ]);
+    S.farmers=farmers;S.entries=entries;S.customers=customers;S.sales=sales;S.saleDays=saleDays;
+    const ps=settings.find(s=>s.k==='main');
+    if(ps){S.buyPrice=ps.buyPrice||0;S.sellPrice=ps.sellPrice||0;}
+    S.rRateInput=String(S.buyPrice);
+    S.shift=autoShift();S.date=todayStr();S.saleDate=todayStr();
+    const syncCfg=settings.find(s=>s.k==='sync');
+    if(syncCfg&&syncCfg.bucketId){connectSync(syncCfg.bucketId,false);}
+  }catch(err){
+    document.getElementById('main').innerHTML=`<div class="empty" style="margin-top:40px;">Could not open database.<br><small style="color:var(--soft)">${err}</small><br><br>Please try Chrome, Edge or Firefox (not file:// in Safari).</div>`;
+    return;
+  }
+  renderAll();
+}
+boot();
+</script>
+</body>
+</html>
